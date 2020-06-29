@@ -19,34 +19,33 @@ import org.elm.workspace.ElmPackageProject
 import org.elm.workspace.ParseException
 import org.elm.workspace.Version
 import java.nio.file.Path
-import java.util.*
 
-private val log = logger<ElmFormatCLI>()
+private val log = logger<ElmReviewCLI>()
 
 
 /**
- * Interact with external `elm-format` process.
+ * Interact with external `elm-review` process.
  */
-class ElmFormatCLI(private val elmFormatExecutablePath: Path) {
+class ElmReviewCLI(private val elmReviewExecutablePath: Path) {
 
-    private fun getFormattedContentOfDocument(elmVersion: Version, document: Document): ProcessOutput {
+    private fun getReviewedContentOfDocument(elmVersion: Version, document: Document): ProcessOutput {
         val arguments = listOf(
                 "--yes",
                 "--elm-version=${elmVersion.x}.${elmVersion.y}",
                 "--stdin"
         )
 
-        return GeneralCommandLine(elmFormatExecutablePath)
+        return GeneralCommandLine(elmReviewExecutablePath)
                 .withParameters(arguments)
                 .execute(document.text)
     }
 
 
-    fun formatDocumentAndSetText(project: Project, document: Document, version: Version, addToUndoStack: Boolean) {
+    fun review(project: Project, document: Document, version: Version, addToUndoStack: Boolean) {
 
         val result = ProgressManager.getInstance().runProcessWithProgressSynchronously<ProcessOutput, ExecutionException>({
-            getFormattedContentOfDocument(version, document)
-        }, "Running elm-format on current file...", true, project)
+            getReviewedContentOfDocument(version, document)
+        }, "Running elm-review on current file...", true, project)
 
         if (result.isSuccess) {
             val formatted = result.stdout
@@ -61,7 +60,7 @@ class ElmFormatCLI(private val elmFormatExecutablePath: Path) {
                 }
 
                 if (addToUndoStack) {
-                    CommandProcessor.getInstance().executeCommand(project, writeAction, "Run elm-format on current file", null, document)
+                    CommandProcessor.getInstance().executeCommand(project, writeAction, "Run elm-review on current file", null, document)
                 } else {
                     CommandProcessor.getInstance().runUndoTransparentAction(writeAction)
                 }
@@ -71,21 +70,23 @@ class ElmFormatCLI(private val elmFormatExecutablePath: Path) {
 
 
     fun queryVersion(): Result<Version> {
-        // Output of `elm-format` is multiple lines where the first line is something like 'elm-format 0.8.1'.
-        // NOTE: `elm-format` does not currently support a `--version` argument, so this is going to be brittle.
+        // Output of `elm-review` is multiple lines where the first line is something like 'elm-review 0.8.1'.
+        // NOTE: `elm-review` does not currently support a `--version` argument, so this is going to be brittle.
         val firstLine = try {
-            GeneralCommandLine(elmFormatExecutablePath)
+            val arguments: List<String> = listOf("--version")
+            GeneralCommandLine(elmReviewExecutablePath)
+                    .withParameters(arguments)
                     .execute(timeoutInMilliseconds = 3000)
                     .stdoutLines
                     .firstOrNull()
         } catch (e: ExecutionException) {
-            return Result.Err("failed to run elm-format: ${e.message}")
-        } ?: return Result.Err("no output from elm-format")
+            return Result.Err("failed to run elm-review: ${e.message}")
+        } ?: return Result.Err("no output from elm-review")
 
         return try {
             Result.Ok(Version.parse(firstLine))
         } catch (e: ParseException) {
-            Result.Err("invalid elm-format version: ${e.message}")
+            Result.Err("invalid elm-review version: ${e.message}")
         }
     }
 
