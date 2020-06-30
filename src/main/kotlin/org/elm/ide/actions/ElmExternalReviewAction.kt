@@ -11,20 +11,21 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.messages.Topic
 import org.elm.ide.notifications.showBalloon
 import org.elm.lang.core.ElmFileType
-import org.elm.lang.core.psi.ElmFile
 import org.elm.lang.core.psi.isElmFile
 import org.elm.openapiext.isUnitTestMode
-import org.elm.openapiext.pathAsPath
-import org.elm.workspace.*
+import org.elm.workspace.Version
 import org.elm.workspace.commandLineTools.ElmReviewCLI
-import org.elm.workspace.compiler.*
+import org.elm.workspace.compiler.ElmBuildAction
+import org.elm.workspace.compiler.ElmError
+import org.elm.workspace.elmToolchain
+import org.elm.workspace.elmWorkspace
 import java.nio.file.Path
+
 
 private val log = logger<ElmExternalReviewAction>()
 
@@ -62,17 +63,6 @@ class ElmExternalReviewAction : AnAction() {
         val projectDir = VfsUtil.findFile(elmProject.projectDirPath, true)
                 ?: return showError(project, "Could not determine active Elm project's path")
 
-//        val (targetPath) = when (elmProject) {
-//            is ElmApplicationProject -> {
-//                val mainEntryPoint = findMainEntryPoint(project, elmProject)
-//                mainEntryPoint?.containingFile?.virtualFile?.let { Triple(it.pathAsPath, VfsUtilCore.getRelativePath(it, projectDir), mainEntryPoint.textOffset) }
-//                        ?: return showError(project, "Cannot find your Elm app's main entry point. Please make sure that it has a type annotation.")
-//            }
-//
-//            is ElmPackageProject ->
-//                Triple(activeFile.pathAsPath, VfsUtilCore.getRelativePath(activeFile, projectDir), 0)
-//        }
-
         showError(project, "elmProject $elmProject")
         showError(project, "projectDir $projectDir")
         val ctx = getContext(e)
@@ -94,7 +84,7 @@ class ElmExternalReviewAction : AnAction() {
         }
 
         val json = try {
-            elmReviewCLI.runReview().stdout
+            elmReviewCLI.runReview(elmProject, ctx.project.elmToolchain.elmCLI).stdout
         } catch (e: ExecutionException) {
             showError(project, "execution error $e")
             return

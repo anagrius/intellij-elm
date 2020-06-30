@@ -9,10 +9,7 @@ import org.elm.lang.core.psi.ElmFile
 import org.elm.openapiext.GeneralCommandLine
 import org.elm.openapiext.Result
 import org.elm.openapiext.execute
-import org.elm.workspace.ElmApplicationProject
-import org.elm.workspace.ElmPackageProject
-import org.elm.workspace.ParseException
-import org.elm.workspace.Version
+import org.elm.workspace.*
 import java.nio.file.Path
 
 private val log = logger<ElmReviewCLI>()
@@ -23,11 +20,17 @@ private val log = logger<ElmReviewCLI>()
  */
 class ElmReviewCLI(private val elmReviewExecutablePath: Path) {
 
-    fun runReview(): ProcessOutput {
-        val arguments: List<String> = listOf("--report=json")
+    fun runReview(elmProject: ElmProject, elmCompiler: ElmCLI?): ProcessOutput {
+        val arguments: List<String> = listOf(
+                "--report=json",
+                // This option makes the CLI output non-JSON output, but can be useful to debug what is happening
+                // "--debug",
+                if (elmCompiler == null) "" else "--compiler=${elmCompiler.path()}"
+        )
         return GeneralCommandLine(elmReviewExecutablePath)
+                .withWorkDirectory(elmProject.projectDirPath.toString())
                 .withParameters(arguments)
-                .execute()
+                .execute(ignoreExitCode = true)
     }
 
     fun queryVersion(): Result<Version> {

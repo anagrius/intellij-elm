@@ -25,6 +25,10 @@ class ElmCLI(private val elmExecutablePath: Path) {
                 .execute(owner, ignoreExitCode = true)
     }
 
+    fun path(): Path {
+        return elmExecutablePath
+    }
+
     fun installDeps(owner: Disposable, elmProjectManifestPath: Path): ProcessOutput {
         // Elm 0.19 does not have a way to install dependencies directly,
         // so we have to compile an empty file to make it work.
