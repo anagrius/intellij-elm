@@ -10,7 +10,6 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.messages.Topic
@@ -20,10 +19,10 @@ import org.elm.lang.core.psi.isElmFile
 import org.elm.openapiext.isUnitTestMode
 import org.elm.workspace.Version
 import org.elm.workspace.commandLineTools.ElmReviewCLI
-import org.elm.workspace.compiler.ElmBuildAction
-import org.elm.workspace.compiler.ElmError
 import org.elm.workspace.elmToolchain
 import org.elm.workspace.elmWorkspace
+import org.elm.workspace.elmreview.ElmReviewError
+import org.elm.workspace.elmreview.elmReviewJsonToMessages
 import java.nio.file.Path
 
 
@@ -92,51 +91,17 @@ class ElmExternalReviewAction : AnAction() {
         showError(project, "json $json")
 
         val messages = if (json.isEmpty()) emptyList() else {
-//            listOf(ElmError(
-//                    title = report.title,
-//                    html = chunksToHtml(report.message),
-//                    location = report.path?.let { ElmLocation(path = it, moduleName = null, region = null) }))
-            listOf(ElmError(
-                    title = "Some hardcoded error",
-                    html = "<h1>Some error occurred</h1>",
-                    location = null // report.path?.let { ElmLocation(path = it, moduleName = null, region = null) }))
-            ))
-//            elmJsonToCompilerMessages(json).sortedWith(
-//                    compareBy(
-//                            { it.location?.moduleName },
-//                            { it.location?.region?.start?.line },
-//                            { it.location?.region?.start?.column }
-//                    ))
+            elmReviewJsonToMessages(json).sortedWith(
+                    compareBy(
+                            { it.path },
+                            { it.region.start.line },
+                            { it.region.start.column }
+                    ))
         }
-        project.messageBus.syncPublisher(ElmBuildAction.ERRORS_TOPIC).update(elmProject.projectDirPath, messages, null, 0)
+
+        project.messageBus.syncPublisher(ERRORS_TOPIC).update(elmProject.projectDirPath, messages, null, 0)
         if (isUnitTestMode) return
-        ToolWindowManager.getInstance(project).getToolWindow("Elm Compiler").show(null)
-//        if (result.isSuccess) {
-//            val formatted = result.stdout
-//            val source = document.text
-//
-//            if (source != formatted) {
-//
-//                val writeAction = {
-//                    ApplicationManager.getApplication().runWriteAction {
-//                        document.setText(formatted)
-//                    }
-//                }
-//
-//                if (addToUndoStack) {
-//                    CommandProcessor.getInstance().executeCommand(project, writeAction, "Run elm-review on current file", null, document)
-//                } else {
-//                    CommandProcessor.getInstance().runUndoTransparentAction(writeAction)
-//                }
-//            }
-//        }
-//        try {
-//            elmReview.review(ctx.project, ctx.document, ctx.elmVersion, addToUndoStack = true)
-//        } catch (ex: ExecutionException) {
-//            if (isUnitTestMode) throw ex
-//            val message = ex.message ?: "something went wrong running elm-format"
-//            ctx.project.showBalloon(message, NotificationType.ERROR, fixAction)
-//        }
+        ToolWindowManager.getInstance(project).getToolWindow("elm-review").show(null)
     }
 
     private fun getContext(e: AnActionEvent): Context? {
@@ -156,14 +121,12 @@ class ElmExternalReviewAction : AnAction() {
             val elmVersion: Version
     )
 
-    interface ElmErrorsListener {
-        fun update(baseDirPath: Path, messages: List<ElmError>, targetPath: String?, offset: Int)
+    interface ElmReviewErrorsListener {
+        fun update(baseDirPath: Path, messages: List<ElmReviewError>, targetPath: String?, offset: Int)
     }
 
     companion object {
         const val ID = "Elm.RunExternalElmReview" // must stay in-sync with `plugin.xml`
-        val ERRORS_TOPIC = Topic("Elm compiler-messages", ElmBuildAction.ElmErrorsListener::class.java)
-        // TODO Jeroen
-        // val ERRORS_TOPIC = Topic("elm-review errors", ElmBuildAction.ElmErrorsListener::class.java)
+        val ERRORS_TOPIC = Topic("elm-review errors", ElmReviewErrorsListener::class.java)
     }
 }
