@@ -23,6 +23,12 @@ sealed class Report {
     ) : Report()
 }
 
+data class BadModuleError(
+        val path: String,
+        val errors: List<ElmReviewError>
+)
+
+
 class ReportDeserializer : JsonDeserializer<Report> {
     override fun deserialize(element: JsonElement, typeOf: Type, context: JsonDeserializationContext): Report {
         if (!element.isJsonObject) throw JsonParseException("Expected a report object")
@@ -36,13 +42,10 @@ class ReportDeserializer : JsonDeserializer<Report> {
     }
 }
 
-data class BadModuleError(
-        val path: String,
-        val errors: List<ElmReviewError>
-)
-
 data class ElmReviewError(
+        val path: String?,
         val rule: String,
+        val ruleLink: String?,
         val message: String,
         val details: List<String>,
         val region: Region,

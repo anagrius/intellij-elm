@@ -24,7 +24,9 @@ fun elmReviewJsonToMessages(json: String): List<ElmReviewError> {
             report.errors.flatMap { errorsForFile ->
                 errorsForFile.errors.map { error ->
                     ElmReviewError(
+                            path = errorsForFile.path,
                             rule = error.rule,
+                            ruleLink = error.ruleLink,
                             message = error.message,
                             details = error.details,
                             formatted = error.formatted,
