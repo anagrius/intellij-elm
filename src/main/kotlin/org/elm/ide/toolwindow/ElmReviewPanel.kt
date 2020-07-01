@@ -250,7 +250,7 @@ class ElmReviewPanel(
 
         val emptyErrorTable = DefaultTableModel(arrayOf<Array<String>>(emptyArray()), emptyArray())
 
-        val errorTableColumnNames = arrayOf("Module", "Line : Column", "Type")
+        val errorTableColumnNames = arrayOf("Line : Column", "Rule", "Message")
 
         val errorTableHeaderRenderer = object : DefaultTableCellRenderer() {
             override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component =
