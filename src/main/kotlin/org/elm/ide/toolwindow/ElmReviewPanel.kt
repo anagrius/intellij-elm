@@ -82,23 +82,6 @@ class ElmReviewPanel(
     private fun Region.pretty() = "${start.line} : ${start.column}"
 
     // LEFT PANEL
-    private fun createReviewTargetUI(baseDirPath: Path, targetPath: String?, offset: Int): ActionLink {
-        return ActionLink("", object : AnAction() {
-            override fun actionPerformed(e: AnActionEvent) {
-                e.project?.let {
-                    val targetFile = VfsUtil.findFile(baseDirPath.resolve(targetPath), true) ?: return
-                    val descriptor = OpenFileDescriptor(it, targetFile, offset)
-                    descriptor.navigate(true)
-                }
-            }
-        }).apply {
-            alignmentX = Component.LEFT_ALIGNMENT
-            setNormalColor(Color.BLACK)
-            activeColor = Color.BLACK
-            text = "Review Target  $targetPath"
-        }
-    }
-
     private val errorTableUI = JBTable().apply {
         setShowGrid(false)
         intercellSpacing = Dimension(2, 2)
@@ -157,10 +140,6 @@ class ElmReviewPanel(
                     errorTableUI.setRowSelectionInterval(0, 0)
 
                     contentManager.getContent(0)?.displayName = "${reviewErrors.size} errors"
-
-                    val reviewTargetUI = createReviewTargetUI(baseDirPath, targetPath, offset)
-                    errorUI.firstComponent.remove(0)
-                    errorUI.firstComponent.add(reviewTargetUI, BorderLayout.NORTH, 0)
                 }
             })
         }
