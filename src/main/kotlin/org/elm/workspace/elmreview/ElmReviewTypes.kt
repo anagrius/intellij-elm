@@ -25,7 +25,7 @@ sealed class Report {
 
 data class BadModuleError(
         val path: String,
-        val errors: List<ElmReviewError>
+        val errors: List<ElmReviewIntermediateError>
 )
 
 
@@ -43,15 +43,23 @@ class ReportDeserializer : JsonDeserializer<Report> {
 }
 
 data class ElmReviewError(
+        // TODO Add a optional fix field (For later)
         val path: String?,
         val rule: String,
         val ruleLink: String?,
         val message: String,
         val details: List<String>,
         val region: Region,
-        val formatted: List<Chunk>,
-        // TODO Add a optional fix field (For later)
         val html: String
+)
+
+data class ElmReviewIntermediateError(
+        val rule: String,
+        val ruleLink: String?,
+        val message: String,
+        val details: List<String>,
+        val region: Region,
+        val formatted: List<Chunk>
 )
 
 data class Region(val start: Start, val end: End)
@@ -62,7 +70,7 @@ data class End(val line: Int, val column: Int)
 @JsonAdapter(ChunkDeserializer::class)
 sealed class Chunk {
     data class Unstyled(val str: String) : Chunk()
-    data class Styled(val bold: Boolean, val underline: Boolean, val color: List<Int>, val str: String) : Chunk()
+    data class Styled(val str: String, val color: List<Int>?, val href: String?) : Chunk()
 }
 
 class ChunkDeserializer : JsonDeserializer<Chunk> {
@@ -73,14 +81,3 @@ class ChunkDeserializer : JsonDeserializer<Chunk> {
                 else -> throw JsonParseException("Expected a simple string or a rich-text chunk")
             }
 }
-
-// TODO Jeroen Create ElmReviewPanel based on ElmCompilerPanel
-// ElmReviewPanel UI types
-
-data class ElmError(
-        val html: String,
-        val title: String,
-        val region: ElmReviewRegion?
-)
-
-data class ElmReviewRegion(val path: String, val region: Region?)

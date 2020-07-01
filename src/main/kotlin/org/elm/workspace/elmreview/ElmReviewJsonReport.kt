@@ -2,7 +2,6 @@ package org.elm.workspace.elmreview
 
 
 import com.google.gson.Gson
-import org.elm.workspace.compiler.Chunk
 
 // The Elm compiler emits HTTP URLs with angle brackets around them
 private val urlPattern = Regex("""<((http|https)://.*?)>""")
@@ -29,9 +28,8 @@ fun elmReviewJsonToMessages(json: String): List<ElmReviewError> {
                             ruleLink = error.ruleLink,
                             message = error.message,
                             details = error.details,
-                            formatted = error.formatted,
                             region = error.region,
-                            html = "<span>" + error.rule + "</span>"
+                            html = chunksToHtml(error.formatted)
                     )
                 }
             }
@@ -47,14 +45,18 @@ private fun chunksToHtml(chunks: List<Chunk>): String =
 
 private fun chunkToHtml(chunk: Chunk): String =
         when (chunk) {
-            is Chunk.Unstyled -> toHtmlSpan("color: #4F9DA6", chunk.string)
+            is Chunk.Unstyled -> toHtmlSpan("color: #4F9DA6", chunk.str)
             is Chunk.Styled -> with(StringBuilder()) {
-                if (chunk.bold) append("font-weight: bold;")
-                if (chunk.underline) append("text-decoration: underline;")
                 append("color: ${chunk.color.adjustForDisplay()};")
-                toHtmlSpan(this, chunk.string)
+                val str = if (chunk.href == null) {
+                    chunk.str
+                } else {
+                    createHyperlinks(chunk.href, chunk.str)
+                }
+                toHtmlSpan(this, str)
             }
         }
+
 
 private fun toHtmlSpan(style: CharSequence, text: String) =
         """<span style="$style">${text.convertWhitespaceToHtml().createHyperlinks()}</span>"""
@@ -64,6 +66,9 @@ private fun String.createHyperlinks(): String =
             val url = result.groupValues[1]
             "<a href=\"$url\">$url</a>"
         }
+
+private fun createHyperlinks(href: String, text: String): String =
+        "<a href=\"$href\">$text</a>"
 
 /**
  * The Elm compiler emits the text where the whitespace is already formatted to line up
@@ -81,12 +86,11 @@ private fun String.convertWhitespaceToHtml() =
         replace(" ", "&nbsp;").replace("\n", "<br>")
 
 /**
- * Adjust the Elm compiler's colors to make it look good
+ * Adjust the colors to make it look good
  */
-private fun String?.adjustForDisplay(): String =
+private fun List<Int>?.adjustForDisplay(): String =
         when (this) {
-            "yellow" -> "#FACF5A"
-            "red" -> "#FF5959"
-            null -> "white" // Elm compiler uses null to indicate default foreground color? who knows!
-            else -> this
+            listOf(255, 0, 0) -> "#FF5959"
+            null -> "white"
+            else -> "#" + this.map { it.toString(16) }.joinToString("")
         }

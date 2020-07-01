@@ -91,14 +91,13 @@ class ElmReviewJsonToHtmlTest : ElmTestBase() {
                         message = "Top-level variable `fzef` is not used",
                         details = listOf("You should either use this value somewhere, or remove it at the location I pointed at."),
                         region = Region(Start(48, 1), End(48, 5)),
-                        formatted = listOf(
-                                Chunk.Styled(bold = false, underline = false, color = listOf(51, 187, 200), str = "(fix) "),
-                                Chunk.Styled(bold = false, underline = false, color = listOf(255, 0, 0), str = "NoUnused.Variables"),
-                                Chunk.Unstyled(str = ": Top-level variable `fzef` is not used\n\n48| fzef =\n    "),
-                                Chunk.Styled(bold = false, underline = false, color = listOf(255, 0, 0), str = "^^^^"),
-                                Chunk.Unstyled(str = "\n49|     1\n\nYou should either use this value somewhere, or remove it at the location I pointed at.")
-                        ),
-                        html = "<span>NoUnused.Variables</span>"
+                        html = "<html><body style=\"font-family: monospace; font-weight: bold\">" +
+                                "<span style=\"color: #33bbc8;\">(fix)&nbsp;</span>" +
+                                "<span style=\"color: #FF5959;\">NoUnused.Variables</span>" +
+                                "<span style=\"color: #4F9DA6\">:&nbsp;Top-level&nbsp;variable&nbsp;`fzef`&nbsp;is&nbsp;not&nbsp;used<br><br>48|&nbsp;fzef&nbsp;=<br>&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
+                                "<span style=\"color: #FF5959;\">^^^^</span>" +
+                                "<span style=\"color: #4F9DA6\"><br>49|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1<br><br>You&nbsp;should&nbsp;either&nbsp;use&nbsp;this&nbsp;value&nbsp;somewhere,&nbsp;or&nbsp;remove&nbsp;it&nbsp;at&nbsp;the&nbsp;location&nbsp;I&nbsp;pointed&nbsp;at.</span>" +
+                                "</body></html>"
                 ))
         )
     }
