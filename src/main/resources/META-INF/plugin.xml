@@ -409,6 +409,8 @@
                     factoryClass="org.elm.ide.toolwindow.ElmToolWindowFactory"/>
         <toolWindow id="Elm Compiler" anchor="bottom" icon="/icons/elm-toolwindow.png"
                     factoryClass="org.elm.ide.toolwindow.ElmCompilerToolWindowFactory"/>
+        <toolWindow id="elm-review" anchor="bottom" icon="/icons/elm-toolwindow.png"
+                    factoryClass="org.elm.ide.toolwindow.ElmReviewToolWindowFactory"/>
 
 
         <!-- STUBS -->
@@ -496,6 +498,14 @@
             <add-to-group group-id="Elm.WorkspaceToolsGroup"/>
         </group>
 
+        <action id="Elm.Review"
+                class="org.elm.ide.actions.ElmExternalReviewAction"
+                text="Review Elm Project"
+                icon="AllIcons.Toolwindows.ToolWindowBuild"/>
+
+        <group id="Elm.ReviewToolsGroup" text="elm-review" popup="true">
+            <reference id="Elm.Review"/>
+        </group>
     </actions>
 
 </idea-plugin>

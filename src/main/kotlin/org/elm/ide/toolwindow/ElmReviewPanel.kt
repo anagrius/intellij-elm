@@ -137,7 +137,7 @@ class ElmReviewPanel(
     // TOOLWINDOW CONTENT
     private val errorUI = JBSplitter("ElmReviewErrorPanel", 0.4F).apply {
         firstComponent = JPanel(BorderLayout()).apply {
-            add(JBLabel()) // dummy-placeholder component at index 0 (gets replaced by org.elm.workspace.compiler.ElmBuildAction.ElmErrorsListener.update)
+            add(JBLabel()) // dummy-placeholder component at index 0 (gets replaced by org.elm.workspace.compiler.ElmExternalReviewAction.ElmReviewErrorsListener.update)
             add(JBScrollPane(errorTableUI, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER)
         }
         secondComponent = JBScrollPane(messageUI, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED)
@@ -158,22 +158,22 @@ class ElmReviewPanel(
 
                     contentManager.getContent(0)?.displayName = "${reviewErrors.size} errors"
 
-                    val compilerTargetUI = createReviewTargetUI(baseDirPath, targetPath, offset)
+                    val reviewTargetUI = createReviewTargetUI(baseDirPath, targetPath, offset)
                     errorUI.firstComponent.remove(0)
-                    errorUI.firstComponent.add(compilerTargetUI, BorderLayout.NORTH, 0)
+                    errorUI.firstComponent.add(reviewTargetUI, BorderLayout.NORTH, 0)
                 }
             })
         }
     }
 
     private fun createToolbar(): JComponent {
-        val compilerPanel = this
+        val reviewPanel = this
         val toolbar = with(ActionManager.getInstance()) {
             val buttonGroup = DefaultActionGroup().apply {
-                add(getAction("Elm.Build"))
+                add(getAction("Elm.Review"))
                 addSeparator()
-                add(CommonActionsManager.getInstance().createNextOccurenceAction(compilerPanel))
-                add(CommonActionsManager.getInstance().createPrevOccurenceAction(compilerPanel))
+                add(CommonActionsManager.getInstance().createNextOccurenceAction(reviewPanel))
+                add(CommonActionsManager.getInstance().createPrevOccurenceAction(reviewPanel))
             }
             createActionToolbar("Elm Review Toolbar", buttonGroup, true)
         }
