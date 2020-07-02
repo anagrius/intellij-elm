@@ -59,14 +59,7 @@ class ElmExternalReviewAction : AnAction() {
         val elmProject = project.elmWorkspace.findProjectForFile(activeFile)
                 ?: return showError(project, "Could not determine active Elm project")
 
-        val projectDir = VfsUtil.findFile(elmProject.projectDirPath, true)
-                ?: return showError(project, "Could not determine active Elm project's path")
-
-        showError(project, "elmProject $elmProject")
-        showError(project, "projectDir $projectDir")
         val ctx = getContext(e)
-        showError(project, "ctx $ctx")
-
         if (ctx == null) {
             if (isUnitTestMode) error("should not happen: context is null!")
             return
@@ -75,9 +68,8 @@ class ElmExternalReviewAction : AnAction() {
         val fixAction = "Fix" to { ctx.project.elmWorkspace.showConfigureToolchainUI() }
 
         val elmReview = ctx.project.elmToolchain.elmReviewCLI
-        showError(project, "elmReview $elmReview")
+
         if (elmReview == null) {
-            showError(project, "Could not find elm-review")
             ctx.project.showBalloon("Could not find elm-review", NotificationType.ERROR, fixAction)
             return
         }
