@@ -6,8 +6,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -15,10 +13,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.messages.Topic
 import org.elm.ide.notifications.showBalloon
 import org.elm.lang.core.ElmFileType
-import org.elm.lang.core.psi.isElmFile
 import org.elm.openapiext.isUnitTestMode
-import org.elm.workspace.Version
-import org.elm.workspace.commandLineTools.ElmReviewCLI
 import org.elm.workspace.elmToolchain
 import org.elm.workspace.elmWorkspace
 import org.elm.workspace.elmreview.ElmReviewError
@@ -32,7 +27,7 @@ class ElmExternalReviewAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
         super.update(e)
-        e.presentation.isEnabled = getContext(e) != null
+        e.presentation.isEnabled = e.project != null
     }
 
     private fun showError(project: Project, message: String, includeFixAction: Boolean = false) {
@@ -59,23 +54,17 @@ class ElmExternalReviewAction : AnAction() {
         val elmProject = project.elmWorkspace.findProjectForFile(activeFile)
                 ?: return showError(project, "Could not determine active Elm project")
 
-        val ctx = getContext(e)
-        if (ctx == null) {
-            if (isUnitTestMode) error("should not happen: context is null!")
-            return
-        }
+        val fixAction = "Fix" to { project.elmWorkspace.showConfigureToolchainUI() }
 
-        val fixAction = "Fix" to { ctx.project.elmWorkspace.showConfigureToolchainUI() }
-
-        val elmReview = ctx.project.elmToolchain.elmReviewCLI
+        val elmReview = project.elmToolchain.elmReviewCLI
 
         if (elmReview == null) {
-            ctx.project.showBalloon("Could not find elm-review", NotificationType.ERROR, fixAction)
+            project.showBalloon("Could not find elm-review", NotificationType.ERROR, fixAction)
             return
         }
 
         val json = try {
-            elmReviewCLI.runReview(elmProject, ctx.project.elmToolchain.elmCLI).stdout
+            elmReviewCLI.runReview(elmProject, project.elmToolchain.elmCLI).stdout
         } catch (e: ExecutionException) {
             showError(project, "execution error $e")
             return
@@ -95,23 +84,6 @@ class ElmExternalReviewAction : AnAction() {
         if (isUnitTestMode) return
         ToolWindowManager.getInstance(project).getToolWindow("elm-review").show(null)
     }
-
-    private fun getContext(e: AnActionEvent): Context? {
-        val project = e.project ?: return null
-        val file = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return null
-        if (!file.isInLocalFileSystem) return null
-        if (!file.isElmFile) return null
-        val document = FileDocumentManager.getInstance().getDocument(file) ?: return null
-        val elmVersion = ElmReviewCLI.getElmVersion(project, file) ?: return null
-        return Context(project, file, document, elmVersion)
-    }
-
-    data class Context(
-            val project: Project,
-            val file: VirtualFile,
-            val document: Document,
-            val elmVersion: Version
-    )
 
     interface ElmReviewErrorsListener {
         fun update(baseDirPath: Path, messages: List<ElmReviewError>, targetPath: String?, offset: Int)
