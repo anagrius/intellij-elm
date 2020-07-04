@@ -1,6 +1,7 @@
 package org.elm.ide.actions
 
 import com.intellij.execution.ExecutionException
+import com.intellij.execution.process.ProcessOutput
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -63,11 +64,17 @@ class ElmExternalReviewAction : AnAction() {
             return
         }
 
-        val json = try {
-            elmReviewCLI.runReview(elmProject, project.elmToolchain.elmCLI).stdout
+        val processOutput: ProcessOutput = try {
+            elmReviewCLI.runReview(elmProject, project.elmToolchain.elmCLI)
         } catch (e: ExecutionException) {
             showError(project, "execution error $e")
             return
+        }
+
+        val json = if (processOutput.stderr.isEmpty()) {
+            processOutput.stdout
+        } else {
+            processOutput.stderr
         }
         showError(project, "json $json")
 
