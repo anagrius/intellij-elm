@@ -88,9 +88,9 @@ private fun String.convertWhitespaceToHtml() =
 /**
  * Adjust the colors to make it look good
  */
-private fun List<Int>?.adjustForDisplay(): String =
+private fun String?.adjustForDisplay(): String =
         when (this) {
-            listOf(255, 0, 0) -> "#FF5959"
+            "#FF0000" -> "#FF5959"
             null -> "white"
-            else -> "#" + this.map { it.toString(16) }.joinToString("")
+            else -> this
         }
